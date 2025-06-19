@@ -1,0 +1,279 @@
+# Hello GitHub Actions
+
+_Create and run a GitHub Actions workflow._
+
+## Welcome
+
+Automation is key for repetitive tasks like testing, scanning, review, and deployment processes, and [GitHub Actions](https://docs.github.com/actions) is the best way to streamline that workflow.
+
+- **Who is this for**: Developers, DevOps engineers, Security engineers
+- **What you'll learn**: How to create GitHub Actions workflows, how to run them, and how to use them to automate tasks.
+- **What you'll build**: An Actions workflow that will comment on a pull request when it is created.
+- **Prerequisites**: [Introduction to GitHub](https://github.com/skills/introduction-to-github)
+- **How long**: This exercise can be finished in less than 30min.
+
+In this exercise, you will:
+
+1. Create a workflow file
+1. Add a job
+1. Add a run step
+1. See the workflow run
+1. Merge your pull request
+
+### How to start this exercise
+
+Simply copy the exercise to your account, then give your favorite Octocat (Mona) **about 20 seconds** to prepare the first lesson, then **refresh the page**.
+
+[![](https://img.shields.io/badge/Copy%20Exercise-%E2%86%92-1f883d?style=for-the-badge&logo=github&labelColor=197935)](https://github.com/new?template_owner=skills&template_name=hello-github-actions&owner=%40me&name=skills-hello-github-actions&description=Exercise:+Create+and+run+a+GitHub+Actions+Workflow&visibility=public)
+
+<details>
+<summary>Having trouble? 🤷</summary><br/>
+
+When copying the exercise, we recommend the following settings:
+
+- For owner, choose your personal account or an organization to host the repository.
+
+- We recommend creating a public repository, since private repositories will use Actions minutes.
+
+If the exercise isn't ready in 20 seconds, please check the [Actions](../../actions) tab.
+
+- Check to see if a job is running. Sometimes it simply takes a bit longer.
+
+- If the page shows a failed job, please submit an issue. Nice, you found a bug! 🐛
+
+</details>
+
+---
+
+&copy; 2025 GitHub &bull; [Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.md) &bull; [MIT License](https://gh.io/mit)
+
+Documentation.
+Documentation.js.
+The documentation system for modern JavaScript
+Circle CI npm version Gitter Inline docs
+
+emoji objects:date Current maintenance status
+
+Supports modern JavaScript: ES5, ES2017, JSX, Vue and Flow type annotations.
+Infers parameters, types, membership, and more. Write less documentation: let the computer write it for you.
+Integrates with GitHub to link directly from documentation to the code it refers to.
+Customizable output: HTML, JSON, Markdown, and more
+Examples
+HTML output with default template
+Markdown
+JSON
+Documentation
+Getting Started: start here
+Usage: how to use documentation.js
+Recipes: tricks for writing effective JSDoc docs
+Node API: documentation.js's self-generated documentation
+Configuring documentation.js
+
+Troubleshooting
+Theming: tips for theming documentation output in HTML
+See also: a list of projects similar to documentation.js
+User Guide
+Globally install documentation using the npm package manager:
+
+$ npm install -g documentation
+This installs a command called documentation in your path, that you can point at JSDoc-annotated source code to generate human-readable documentation. First, run documentation with the --help option for help:
+
+Usage:
+
+# generate markdown docs for index.js and files it references
+documentation build index.js -f md
+
+# generate html docs for all files in src, and include links to source files in github
+documentation build src/** -f html --github -o docs
+
+# document index.js, ignoring any files it requires or imports
+documentation build index.js -f md --shallow
+
+# validate JSDoc syntax in util.js
+documentation lint util.js
+
+# update the API section of README.md with docs from index.js
+documentation readme index.js --section=API
+
+# build docs for all values exported by index.js
+documentation build --document-exported index.js
+
+# build html docs for a TypeScript project
+documentation build index.ts --parse-extension ts -f html -o docs
+
+Commands:
+  build [input..] build documentation
+  lint [input..] check for common style and uniformity mistakes
+  readme [input..] inject documentation into your README.md
+
+Options:
+  --version Show version number [boolean]
+  --help Show help [boolean]
+Contributing
+We have plenty of issues that we'd love help with.
+
+Robust and complete JSDoc support, including typedefs.
+Strong support for HTML and Markdown output
+Documentation coverage, statistics, and validation
+documentation is an OPEN Open Source Project. This means that:
+
+Individuals making significant and valuable contributions are given commit-access to the project to contribute as they see fit. This project is more like an open wiki than a standard guarded open source project.
+
+
+
+Docco.
+
+/\ \ \ \ \/\ \ ___ ___ ___ ___ \ \ \ \ \ / __\ /'\ /'\ / __`
+\ \ _\ \ /\ \ \ \ /\ _/ /\ _/ /\ \ \
+\ _/ \ _/ \ _\ \ _\ \ _/ // // // // /_/
+
+Docco is a quick-and-dirty, hundred-line-long, literate-programming-style documentation generator. For more information, see:
+
+http://ashkenas.com/docco/
+
+Installation:
+
+sudo npm install -g docco
+
+Usage: docco [options] FILES
+
+Options:
+
+-h, --help output usage information
+-V, --version output the version number
+-l, --layout [layout] choose a built-in layouts (parallel, linear)
+-c, --css [file] use a custom css file
+-o, --output [path] use a custom output path
+-t, --template [file] use a custom .jst template
+-e, --extension [ext] use the given file extension for all inputs
+-L, --languages [file] use a custom languages.json
+-m, --marked [file] use custom marked options.
+
+
+JSDoc.
+
+JSDoc
+Build status
+
+An API documentation generator for JavaScript.
+
+Want to contribute to JSDoc? Please read CONTRIBUTING.md.
+
+Installation and Usage
+JSDoc supports stable versions of Node.js 8.15.0 and later. You can install JSDoc globally or in your project's node_modules folder.
+
+To install the latest version on npm globally (might require sudo; learn how to fix this):
+
+npm install -g jsdoc
+To install the latest version on npm locally and save it in your package's package.json file:
+
+npm install --save-dev jsdoc
+Note: By default, npm adds your package using the caret operator in front of the version number (for example, ^3.6.3). We recommend using the tilde operator instead (for example, ~3.6.3), which limits updates to the most recent patch-level version. See this Stack Overflow answer for more information about the caret and tilde operators.
+
+If you installed JSDoc locally, the JSDoc command-line tool is available in ./node_modules/.bin. To generate documentation for the file yourJavaScriptFile.js:
+
+./node_modules/.bin/jsdoc yourJavaScriptFile.js
+If you installed JSDoc globally, run the jsdoc command:
+
+jsdoc yourJavaScriptFile.js
+By default, the generated documentation is saved in a directory named out. You can use the --destination (-d) option to specify another directory.
+
+Run jsdoc --help for a complete list of command-line options.
+
+Templates and tools
+The JSDoc community has created templates and other tools to help you generate and customize your documentation. Here are a few of them:
+
+Templates
+jaguarjs-jsdoc
+DocStrap (example)
+jsdoc3Template (example)
+minami
+docdash (example)
+tui-jsdoc-template (example)
+better-docs (example)
+Build tools
+JSDoc Grunt plugin
+JSDoc Gulp plugin
+JSDoc GitHub Action
+Other tools
+jsdoc-to-markdown
+Integrating GitBook with JSDoc
+For more information
+Documentation is available at jsdoc.app.
+Contribute to the docs at jsdoc/jsdoc.github.io.
+Join JSDoc's Slack channel.
+Ask for help on the JSDoc Users mailing list.
+Post questions tagged jsdoc to Stack Overflow.
+License
+JSDoc is copyright (c) 2011-present Michael Mathews micmath@gmail.com and the contributors to JSDoc.
+
+JSDoc is free software, licensed under the Apache License, Version 2.0. See the LICENSE file for more details.
+
+
+
+Docusaurus
+
+Docusaurus
+ npm version GitHub Actions status PRs Welcome Discord Chatcode style: prettier Tested with Jest Covered by Argos Gitpod Ready-to-Code Netlify Status Deploy with Vercel Deploy to Netlify
+
+Introduction
+Docusaurus is a project for building, deploying, and maintaining open source project websites easily.
+
+Short on time.  Check out our 5-minute tutorial ⏱️!
+
+Tip: use docusaurus.new to test Docusaurus immediately in a playground.
+
+Simple to Start
+Docusaurus is built in a way so that it can get running in as little time as possible. We've built Docusaurus to handle the website build process so you can focus on your project.
+
+Localizable
+Docusaurus ships with localization support via CrowdIn. Empower and grow your international community by translating your documentation.
+
+Customizable
+While Docusaurus ships with the key pages and sections you need to get started, including a home page, a docs section, a blog, and additional support pages, it is also customizable as well to ensure you have a site that is uniquely yours.
+
+Installation
+Use the initialization CLI to create your site:
+
+npm init docusaurus@latest
+Read the docs for any further information.
+
+Contributing
+We've released Docusaurus because it helps us better scale and supports the many OSS projects at Meta. We hope that other organizations can benefit from the project. We are thankful for any contributions from the community.
+
+Code of Conduct
+Meta has adopted a Code of Conduct that we expect project participants to adhere to. Please read the full text so that you can understand what actions will and will not be tolerated.
+
+Contributing guide
+Read our contributing guide to learn about our development process, how to propose bugfixes and improvements, and how to build and test your changes to Docusaurus.
+
+Beginner-friendly bugs
+To help you get your feet wet and get you familiar with our contribution process, we have a list of beginner-friendly bugs that might contain smaller issues to tackle first. This is a great place to get started.
+
+Contact
+We have a few channels for contact:
+
+Discord:
+#general for those using Docusaurus.
+#contributors for those wanting to contribute to the Docusaurus core.
+@docusaurus X
+GitHub Issues
+Contributors
+This project exists thanks to all the people who contribute. [Contribute]. 
+
+License
+Docusaurus is MIT licensed.
+
+The Docusaurus documentation (e.g., .md files in the /docs folder) is Creative Commons licensed.
+
+Special thanks
+BrowserStack logo
+
+BrowserStack supports us with free access for open source.
+
+Rocket Validator logo
+
+Rocket Validator helps us find HTML markup or accessibility issues.
+
+
+
