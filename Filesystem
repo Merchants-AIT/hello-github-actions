@@ -1,0 +1,2384 @@
+
+Del.
+
+
+del
+Delete files and directories using globs
+
+Similar to rimraf, but with a Promise API and support for multiple files and globbing. It also protects you against deleting the current working directory and above.
+
+Install
+npm install del
+Usage
+import {deleteAsync} from 'del';
+
+const deletedFilePaths = await deleteAsync(['temp/*.js', '!temp/unicorn.js']);
+const deletedDirectoryPaths = await deleteAsync(['temp', 'public']);
+
+console.log('Deleted files:\n', deletedFilePaths.join('\n'));
+console.log('\n\n');
+console.log('Deleted directories:\n', deletedDirectoryPaths.join('\n'));
+Beware
+The glob pattern ** matches all children and the parent.
+
+So this won't work:
+
+deleteSync(['public/assets/**', '!public/assets/goat.png']);
+You have to explicitly ignore the parent directories too:
+
+deleteSync(['public/assets/**', '!public/assets', '!public/assets/goat.png']);
+To delete all subdirectories inside public/, you can do:
+
+deleteSync(['public/*/']);
+Suggestions on how to improve this welcome!
+
+API
+Note that glob patterns can only contain forward-slashes, not backward-slashes. Windows file paths can use backward-slashes as long as the path does not contain any glob-like characters, otherwise use path.posix.join() instead of path.join().
+
+deleteAsync(patterns, options?)
+Returns Promise<string[]> with the deleted paths.
+
+deleteSync(patterns, options?)
+Returns string[] with the deleted paths.
+
+patterns
+Type: string | string[]
+
+See the supported glob patterns.
+
+Pattern examples with expected matches
+Quick globbing pattern overview
+options
+Type: object
+
+You can specify any of the globby options in addition to the below options. In contrast to the globby defaults, expandDirectories, onlyFiles, and followSymbolicLinks are false by default.
+
+force
+Type: boolean
+Default: false
+
+Allow deleting the current working directory and outside.
+
+dryRun
+Type: boolean
+Default: false
+
+See what would be deleted.
+
+import {deleteAsync} from 'del';
+
+const deletedPaths = await deleteAsync(['temp/*.js'], {dryRun: true});
+
+console.log('Files and directories that would be deleted:\n', deletedPaths.join('\n'));
+dot
+Type: boolean
+Default: false
+
+Allow patterns to match files/folders that start with a period (.).
+
+This option is passed through to fast-glob.
+
+Note that an explicit dot in a portion of the pattern will always match dot files.
+
+Example
+
+directory/
+├── .editorconfig
+└── package.json
+import {deleteSync} from 'del';
+
+deleteSync('*', {dot: false});
+//=> ['package.json']
+deleteSync('*', {dot: true});
+//=> ['.editorconfig', 'package.json']
+concurrency
+Type: number
+Default: Infinity
+Minimum: 1
+
+Concurrency limit.
+
+onProgress
+Type: (progress: ProgressData) => void
+
+Called after each file or directory is deleted.
+
+import {deleteAsync} from 'del';
+
+await deleteAsync(patterns, {
+ onProgress: progress => {
+ // …
+}});
+ProgressData
+{
+ totalCount: number,
+ deletedCount: number,
+ percent: number,
+ path?: string
+}
+percent is a value between 0 and 1
+path is the absolute path of the deleted file or directory. It will not be present if nothing was deleted.
+CLI
+See del-cli for a CLI for this module and trash-cli for a safe version that is suitable for running by hand.
+
+Related
+make-dir - Make a directory and its parents if needed
+globby - User-friendly glob matching.
+
+
+
+Globby.
+
+globby
+User-friendly glob matching
+
+Based on fast-glob but adds a bunch of useful features.
+
+Features
+Promise API
+Multiple patterns
+Negated patterns: ['foo*', '!foobar']
+Expands directories: foo → foo/**/*
+Supports .gitignore and similar ignore config files
+Supports URL as cwd
+Install
+npm install globby
+Usage
+├── unicorn
+├── cake
+└── rainbow
+import {globby} from 'globby';
+
+const paths = await globby(['*', '!cake']);
+
+console.log(paths);
+//=> ['unicorn', 'rainbow']
+API
+Note that glob patterns can only contain forward-slashes, not backward-slashes, so if you want to construct a glob pattern from path components, you need to use path.posix.join() instead of path.join().
+
+globby(patterns, options?)
+Returns a Promise<string[]> of matching paths.
+
+patterns
+Type: string | string[]
+
+See supported minimatch patterns.
+
+options
+Type: object
+
+See the fast-glob options in addition to the ones below.
+
+expandDirectories
+Type: boolean | string[] | object
+Default: true
+
+If set to true, globby will automatically glob directories for you. If you define an Array it will only glob files that matches the patterns inside the Array. You can also define an object with files and extensions like below:
+
+import {globby} from 'globby';
+
+const paths = await globby('images', {
+ expandDirectories: {
+  files: ['cat', 'unicorn', '*.jpg'],
+  extensions: ['png']
+ }
+});
+
+console.log(paths);
+//=> ['cat.png', 'unicorn.png', 'cow.jpg', 'rainbow.jpg']
+Note that if you set this option to false, you won't get back matched directories unless you set onlyFiles: false.
+
+gitignore
+Type: boolean
+Default: false
+
+Respect ignore patterns in .gitignore files that apply to the globbed files.
+
+ignoreFiles
+Type: string | string[]
+Default: undefined
+
+Glob patterns to look for ignore files, which are then used to ignore globbed files.
+
+This is a more generic form of the gitignore option, allowing you to find ignore files with a compatible syntax. For instance, this works with Babel's .babelignore, Prettier's .prettierignore, or ESLint's .eslintignore files.
+
+globbySync(patterns, options?)
+Returns string[] of matching paths.
+
+globbyStream(patterns, options?)
+Returns a stream.Readable of matching paths.
+
+For example, loop over glob matches in a for await...of loop like this:
+
+import {globbyStream} from 'globby';
+
+for await (const path of globbyStream('*.tmp')) {
+ console.log(path);
+}
+convertPathToPattern(path)
+Convert a path to a pattern. Learn more.
+
+generateGlobTasks(patterns, options?)
+Returns an Promise<object[]> in the format {patterns: string[], options: Object}, which can be passed as arguments to fast-glob. This is useful for other globbing-related packages.
+
+Note that you should avoid running the same tasks multiple times as they contain a file system cache. Instead, run this method each time to ensure file system changes are taken into consideration.
+
+generateGlobTasksSync(patterns, options?)
+Returns an object[] in the format {patterns: string[], options: Object}, which can be passed as arguments to fast-glob. This is useful for other globbing-related packages.
+
+Takes the same arguments as generateGlobTasks.
+
+isDynamicPattern(patterns, options?)
+Returns a boolean of whether there are any special glob characters in the patterns.
+
+Note that the options affect the results.
+
+This function is backed by fast-glob.
+
+isGitIgnored(options?)
+Returns a Promise<(path: URL | string) => boolean> indicating whether a given path is ignored via a .gitignore file.
+
+Takes cwd?: URL | string as options.
+
+import {isGitIgnored} from 'globby';
+
+const isIgnored = await isGitIgnored();
+
+console.log(isIgnored('some/file'));
+isGitIgnoredSync(options?)
+Returns a (path: URL | string) => boolean indicating whether a given path is ignored via a .gitignore file.
+
+Takes cwd?: URL | string as options.
+
+isIgnoredByIgnoreFiles(patterns, options?)
+Returns a Promise<(path: URL | string) => boolean> indicating whether a given path is ignored via the ignore files.
+
+This is a more generic form of the isGitIgnored function, allowing you to find ignore files with a compatible syntax. For instance, this works with Babel's .babelignore, Prettier's .prettierignore, or ESLint's .eslintignore files.
+
+Takes cwd?: URL | string as options.
+
+import {isIgnoredByIgnoreFiles} from 'globby';
+
+const isIgnored = await isIgnoredByIgnoreFiles("**/.gitignore");
+
+console.log(isIgnored('some/file'));
+isIgnoredByIgnoreFilesSync(patterns, options?)
+Returns a (path: URL | string) => boolean indicating whether a given path is ignored via the ignore files.
+
+This is a more generic form of the isGitIgnoredSync function, allowing you to find ignore files with a compatible syntax. For instance, this works with Babel's .babelignore, Prettier's .prettierignore, or ESLint's .eslintignore files.
+
+Takes cwd?: URL | string as options.
+
+import {isIgnoredByIgnoreFilesSync} from 'globby';
+
+const isIgnored = isIgnoredByIgnoreFilesSync("**/.gitignore");
+
+console.log(isIgnored('some/file'));
+Globbing patterns
+Just a quick overview.
+
+* matches any number of characters, but not /
+? matches a single character, but not /
+** matches any number of characters, including /, as long as it's the only thing in a path part
+{} allows for a comma-separated list of "or" expressions
+! at the beginning of a pattern will negate the match
+Various patterns and expected matches.
+
+Related
+multimatch - Match against a list instead of the filesystem
+matcher - Simple wildcard matching
+del - Delete files and directories
+make-dir - Make a directory and its parents if needed.
+
+
+
+Cpy.
+
+cpy
+Copy files
+
+IMPORTANT: This package has a lot of problems and I unfortunately don't have time to fix them. I would recommend against using this package until these problems are resolved. Help welcome (see the issue tracker) 🙏
+
+Why
+Fast by cloning the files whenever possible.
+Resilient by using graceful-fs.
+User-friendly by accepting globs and creating non-existent destination directories.
+User-friendly error messages.
+Progress reporting.
+Install
+npm install cpy
+Usage
+import cpy from 'cpy';
+
+await cpy([
+ 'source/*.png', // Copy all .png files
+ '!source/goat.png', // Ignore goat.png
+], 'destination');
+
+// Copy node_modules to destination/node_modules
+await cpy('node_modules', 'destination');
+
+// Copy node_modules content to destination
+await cpy('node_modules/**', 'destination');
+
+// Copy node_modules structure but skip all files except package.json files
+await cpy('node_modules/**/*.json', 'destination');
+
+// Copy all png files into destination without keeping directory structure
+await cpy('**/*.png', 'destination', {flat: true});
+
+console.log('Files copied!');
+API
+cpy(source, destination, options?)
+Returns a Promise<string[]> with the destination file paths.
+
+source
+Type: string | string[]
+
+Files to copy.
+
+If any of the files do not exist, an error will be thrown (does not apply to globs).
+
+destination
+Type: string
+
+Destination directory.
+
+options
+Type: object
+
+Options are passed to globby.
+
+In addition, you can specify the below options.
+
+cwd
+Type: string
+Default: process.cwd()
+
+Working directory to find source files.
+
+overwrite
+Type: boolean
+Default: true
+
+Overwrite existing files.
+
+flat
+Type: boolean
+Default: false
+
+Flatten directory structure. All copied files will be put in the same directory.
+
+import cpy from 'cpy';
+
+await cpy('src/**/*.js', 'destination', {
+ flat: true
+});
+rename
+Type: string | Function
+
+Filename or function returning a filename used to rename every file in source.
+
+import cpy from 'cpy';
+
+await cpy('foo.js', 'destination', {
+ // The `basename` is the filename with extension.
+ rename: basename => `prefix-${basename}`
+});
+
+await cpy('foo.js', 'destination', {
+ rename: 'new-name'
+});
+concurrency
+Type: number
+Default: (os.cpus().length || 1) * 2
+
+Number of files being copied concurrently.
+
+ignoreJunk
+Type: boolean
+Default: true
+
+Ignores junk files.
+
+filter
+Type: Function
+
+Function to filter files to copy.
+
+Receives a source file object as the first argument.
+
+Return true to include, false to exclude. You can also return a Promise that resolves to true or false.
+
+import cpy from 'cpy';
+
+await cpy('foo', 'destination', {
+ filter: file => file.extension !== 'nocopy'
+});
+Source file object
+path
+Type: string
+Example: '/tmp/dir/foo.js'
+
+Resolved path to the file.
+
+relativePath
+Type: string
+Example: 'dir/foo.js' if cwd was '/tmp'
+
+Relative path to the file from cwd.
+
+name
+Type: string
+Example: 'foo.js'
+
+Filename with extension.
+
+nameWithoutExtension
+Type: string
+Example: 'foo'
+
+Filename without extension.
+
+extension
+Type: string
+Example: 'js'
+
+File extension.
+
+Progress reporting
+cpy.on('progress', handler)
+handler(progress)
+Type: Function
+
+progress
+{
+ completedFiles: number,
+ totalFiles: number,
+ completedSize: number,
+ percent: number,
+ sourcePath: string,
+ destinationPath: string,
+}
+completedSize is in bytes
+percent is a value between 0 and 1
+sourcePath is the absolute source path of the current file being copied.
+destinationPath is The absolute destination path of the current file being copied.
+Note that the .on() method is available only right after the initial cpy call, so make sure you add a handler before awaiting the promise:
+
+import cpy from 'cpy';
+
+await cpy(source, destination).on('progress', progress => {
+ // …
+});
+Related
+cpy-cli - CLI for this module
+copy-file - Copy a single file
+move-file - Move a file
+make-dir - Make a directory and its parents if needed.
+
+
+
+Chokidar.
+
+Chokidar Weekly downloads
+Minimal and efficient cross-platform file watching library.
+
+There are many reasons to prefer Chokidar to raw fs.watch / fs.watchFile in 2025:
+
+Events are properly reported
+macOS events report filenames
+events are not reported twice
+changes are reported as add / change / unlink instead of useless rename
+Atomic writes are supported, using atomic option
+Some file editors use them
+Chunked writes are supported, using awaitWriteFinish option
+Large files are commonly written in chunks
+File / dir filtering is supported
+Symbolic links are supported
+Recursive watching is always supported, instead of partial when using raw events
+Includes a way to limit recursion depth
+Chokidar relies on the Node.js core fs module, but when using fs.watch and fs.watchFile for watching, it normalizes the events it receives, often checking for truth by getting file stats and/or dir contents. The fs.watch-based implementation is the default, which avoids polling and keeps CPU usage down. Be advised that chokidar will initiate watchers recursively for everything within scope of the paths that have been specified, so be judicious about not wasting system resources by watching much more than needed. For some cases, fs.watchFile, which utilizes polling and uses more resources, is used.
+
+Made for Brunch in 2012, it is now used in ~30 million repositories and has proven itself in production environments.
+
+Sep 2024 update: v4 is out! It decreases dependency count from 13 to 1, removes support for globs, adds support for ESM / Common.js modules, and bumps minimum node.js version from v8 to v14. Check out upgrading.
+
+Getting started
+Install with npm:
+
+npm install chokidar
+Use it in your code:
+
+import chokidar from 'chokidar';
+
+// One-liner for current directory
+chokidar.watch('.').on('all', (event, path) => {
+  console.log(event, path);
+});
+
+// Extended options
+// ----------------
+
+// Initialize watcher.
+const watcher = chokidar.watch('file, dir, or array', {
+  ignored: (path, stats) => stats?.isFile() && !path.endsWith('.js'), // only watch js files
+  persistent: true,
+});
+
+// Something to use when events are received.
+const log = console.log.bind(console);
+// Add event listeners.
+watcher
+  .on('add', (path) => log(`File ${path} has been added`))
+  .on('change', (path) => log(`File ${path} has been changed`))
+  .on('unlink', (path) => log(`File ${path} has been removed`));
+
+// More possible events.
+watcher
+  .on('addDir', (path) => log(`Directory ${path} has been added`))
+  .on('unlinkDir', (path) => log(`Directory ${path} has been removed`))
+  .on('error', (error) => log(`Watcher error: ${error}`))
+  .on('ready', () => log('Initial scan complete. Ready for changes'))
+  .on('raw', (event, path, details) => {
+    // internal
+    log('Raw event info:', event, path, details);
+  });
+
+// 'add', 'addDir' and 'change' events also receive stat() results as second
+// argument when available: https://nodejs.org/api/fs.html#fs_class_fs_stats
+watcher.on('change', (path, stats) => {
+  if (stats) console.log(`File ${path} changed size to ${stats.size}`);
+});
+
+// Watch new files.
+watcher.add('new-file');
+watcher.add(['new-file-2', 'new-file-3']);
+
+// Get list of actual paths being watched on the filesystem
+let watchedPaths = watcher.getWatched();
+
+// Un-watch some files.
+await watcher.unwatch('new-file');
+
+// Stop watching. The method is async!
+await watcher.close().then(() => console.log('closed'));
+
+// Full list of options. See below for descriptions.
+// Do not use this example!
+chokidar.watch('file', {
+  persistent: true,
+
+  // ignore .txt files
+  ignored: (file) => file.endsWith('.txt'),
+  // watch only .txt files
+  // ignored: (file, _stats) => _stats?.isFile() && !file.endsWith('.txt'),
+
+  awaitWriteFinish: true, // emit single event when chunked writes are completed
+  atomic: true, // emit proper events when "atomic writes" (mv _tmp file) are used
+
+  // The options also allow specifying custom intervals in ms
+  // awaitWriteFinish: {
+  // stabilityThreshold: 2000,
+  // pollInterval: 100
+  // },
+  // atomic: 100,
+
+  interval: 100,
+  binaryInterval: 300,
+
+  cwd: '.',
+  depth: 99,
+
+  followSymlinks: true,
+  ignoreInitial: false,
+  ignorePermissionErrors: false,
+  usePolling: false,
+  alwaysStat: false,
+});
+chokidar.watch(paths, [options])
+
+paths (string or array of strings). Paths to files, dirs to be watched recursively.
+options (object) Options object as defined below:
+Persistence
+persistent (default: true). Indicates whether the process should continue to run as long as files are being watched.
+Path filtering
+ignored function, regex, or path. Defines files/paths to be ignored. The whole relative or absolute path is tested, not just filename. If a function with two arguments is provided, it gets called twice per path - once with a single argument (the path), second time with two arguments (the path and the fs.Stats object of that path).
+ignoreInitial (default: false). If set to false then add/addDir events are also emitted for matching paths while instantiating the watching as chokidar discovers these file paths (before the ready event).
+followSymlinks (default: true). When false, only the symlinks themselves will be watched for changes instead of following the link references and bubbling events through the link's path.
+cwd (no default). The base directory from which watch paths are to be derived. Paths emitted with events will be relative to this.
+Performance
+usePolling (default: false). Whether to use fs.watchFile (backed by polling), or fs.watch. If polling leads to high CPU utilization, consider setting this to false. It is typically necessary to set this to true to successfully watch files over a network, and it may be necessary to successfully watch files in other non-standard situations. Setting to true explicitly on MacOS overrides the useFsEvents default. You may also set the CHOKIDAR_USEPOLLING env variable to true (1) or false (0) in order to override this option.
+Polling-specific settings (effective when usePolling: true)
+interval (default: 100). Interval of file system polling, in milliseconds. You may also set the CHOKIDAR_INTERVAL env variable to override this option.
+binaryInterval (default: 300). Interval of file system polling for binary files. (see list of binary extensions)
+alwaysStat (default: false). If relying upon the fs.Stats object that may get passed with add, addDir, and change events, set this to true to ensure it is provided even in cases where it wasn't already available from the underlying watch events.
+depth (default: undefined). If set, limits how many levels of subdirectories will be traversed.
+awaitWriteFinish (default: false). By default, the add event will fire when a file first appears on disk, before the entire file has been written. Furthermore, in some cases some change events will be emitted while the file is being written. In some cases, especially when watching for large files there will be a need to wait for the write operation to finish before responding to a file creation or modification. Setting awaitWriteFinish to true (or a truthy value) will poll file size, holding its add and change events until the size does not change for a configurable amount of time. The appropriate duration setting is heavily dependent on the OS and hardware. For accurate detection this parameter should be relatively high, making file watching much less responsive. Use with caution.
+options.awaitWriteFinish can be set to an object in order to adjust timing params:
+awaitWriteFinish.stabilityThreshold (default: 2000). Amount of time in milliseconds for a file size to remain constant before emitting its event.
+awaitWriteFinish.pollInterval (default: 100). File size polling interval, in milliseconds.
+Errors
+ignorePermissionErrors (default: false). Indicates whether to watch files that don't have read permissions if possible. If watching fails due to EPERM or EACCES with this set to true, the errors will be suppressed silently.
+atomic (default: true if useFsEvents and usePolling are false). Automatically filters out artifacts that occur when using editors that use "atomic writes" instead of writing directly to the source file. If a file is re-added within 100 ms of being deleted, Chokidar emits a change event rather than unlink then add. If the default of 100 ms does not work well for you, you can override it by setting atomic to a custom value, in milliseconds.
+Methods & Events
+chokidar.watch() produces an instance of FSWatcher. Methods of FSWatcher:
+
+.add(path / paths): Add files, directories for tracking. Takes an array of strings or just one string.
+.on(event, callback): Listen for an FS event. Available events: add, addDir, change, unlink, unlinkDir, ready, raw, error. Additionally all is available which gets emitted with the underlying event name and path for every event other than ready, raw, and error. raw is internal, use it carefully.
+.unwatch(path / paths): Stop watching files or directories. Takes an array of strings or just one string.
+.close(): async Removes all listeners from watched files. Asynchronous, returns Promise. Use with await to ensure bugs don't happen.
+.getWatched(): Returns an object representing all the paths on the file system being watched by this FSWatcher instance. The object's keys are all the directories (using absolute paths unless the cwd option was used), and the values are arrays of the names of the items contained in each directory.
+CLI
+Check out third party chokidar-cli, which allows to execute a command on each change, or get a stdio stream of change events.
+
+Troubleshooting
+Sometimes, Chokidar runs out of file handles, causing EMFILE and ENOSP errors:
+
+bash: cannot set terminal process group (-1): Inappropriate ioctl for device bash: no job control in this shell
+Error: watch /home/ ENOSPC
+There are two things that can cause it.
+
+Exhausted file handles for generic fs operations
+Can be solved by using graceful-fs, which can monkey-patch native fs module used by chokidar: let fs = require('fs'); let grfs = require('graceful-fs'); grfs.gracefulify(fs);
+Can also be solved by tuning OS: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p.
+Exhausted file handles for fs.watch
+Can't seem to be solved by graceful-fs or OS tuning
+It's possible to start using usePolling: true, which will switch backend to resource-intensive fs.watchFile
+All fsevents-related issues (WARN optional dep failed, fsevents is not a constructor) are solved by upgrading to v4+.
+
+Changelog
+v4 (Sep 2024): remove glob support and bundled fsevents. Decrease dependency count from 13 to 1. Rewrite in typescript. Bumps minimum node.js requirement to v14+
+v3 (Apr 2019): massive CPU & RAM consumption improvements; reduces deps / package size by a factor of 17x and bumps Node.js requirement to v8.16+.
+v2 (Dec 2017): globs are now posix-style-only. Tons of bugfixes.
+v1 (Apr 2015): glob support, symlink support, tons of bugfixes. Node 0.8+ is supported
+v0.1 (Apr 2012): Initial release, extracted from Brunch
+Upgrading
+If you've used globs before and want do replicate the functionality with v4:
+
+// v3
+chok.watch('**/*.js');
+chok.watch('./directory/**/*');
+
+// v4
+chok.watch('.', {
+  ignored: (path, stats) => stats?.isFile() && !path.endsWith('.js'), // only watch js files
+});
+chok.watch('./directory');
+
+// other way
+import { glob } from 'node:fs/promises';
+const watcher = watch(await Array.fromAsync(glob('**/*.js')));
+
+// unwatching
+// v3
+chok.unwatch('**/*.js');
+// v4
+chok.unwatch(await Array.fromAsync(glob('**/*.js')));
+Also
+Why was chokidar named this way? What's the meaning behind it?
+
+Chowkidar is a transliteration of a Hindi word meaning 'watchman, gatekeeper', चौकीदार. This ultimately comes from Sanskrit _ चतुष्क_ (crossway, quadrangle, consisting-of-four). This word is also used in other languages like Urdu as (چوکیدار) which is widely used in Pakistan and India.
+
+License
+MIT (c) Paul Miller (https://paulmillr.com), see LICENSE file.
+
+
+
+Find-up.
+
+find-up
+Find a file or directory by walking up parent directories
+
+Install
+npm install find-up
+Usage
+/
+└── Users
+    └── sindresorhus
+        ├── unicorn.png
+        └── foo
+            └── bar
+                ├── baz
+                └── example.js
+example.js
+
+import path from 'node:path';
+import {findUp, pathExists} from 'find-up';
+
+console.log(await findUp('unicorn.png'));
+//=> '/Users/sindresorhus/unicorn.png'
+
+console.log(await findUp(['rainbow.png', 'unicorn.png']));
+//=> '/Users/sindresorhus/unicorn.png'
+
+console.log(await findUp(async directory => {
+ const hasUnicorns = await pathExists(path.join(directory, 'unicorn.png'));
+ return hasUnicorns && directory;
+}, {type: 'directory'}));
+//=> '/Users/sindresorhus'
+API
+findUp(name, options?)
+findUp(matcher, options?)
+Returns a Promise for either the path or undefined if it could not be found.
+
+findUp([...name], options?)
+Returns a Promise for either the first path found (by respecting the order of the array) or undefined if none could be found.
+
+findUpMultiple(name, options?)
+findUpMultiple(matcher, options?)
+Returns a Promise for either an array of paths or an empty array if none could be found.
+
+findUpMultiple([...name], options?)
+Returns a Promise for either an array of the first paths found (by respecting the order of the array) or an empty array if none could be found.
+
+findUpSync(name, options?)
+findUpSync(matcher, options?)
+Returns a path or undefined if it could not be found.
+
+findUpSync([...name], options?)
+Returns the first path found (by respecting the order of the array) or undefined if none could be found.
+
+findUpMultipleSync(name, options?)
+findUpMultipleSync(matcher, options?)
+Returns an array of paths or an empty array if none could be found.
+
+findUpMultipleSync([...name], options?)
+Returns an array of the first paths found (by respecting the order of the array) or an empty array if none could be found.
+
+name
+Type: string
+
+The name of the file or directory to find.
+
+matcher
+Type: Function
+
+A function that will be called with each directory until it returns a string with the path, which stops the search, or the root directory has been reached and nothing was found. Useful if you want to match files with certain patterns, set of permissions, or other advanced use-cases.
+
+When using async mode, the matcher may optionally be an async or promise-returning function that returns the path.
+
+options
+Type: object
+
+cwd
+Type: URL | string
+Default: process.cwd()
+
+The directory to start from.
+
+type
+Type: string
+Default: 'file'
+Values: 'file' | 'directory'
+
+The type of path to match.
+
+allowSymlinks
+Type: boolean
+Default: true
+
+Allow symbolic links to match if they point to the chosen path type.
+
+stopAt
+Type: URL | string
+Default: Root directory
+
+A directory path where the search halts if no matches are found before reaching this point.
+
+pathExists(path)
+Returns a Promise<boolean> of whether the path exists.
+
+pathExistsSync(path)
+Returns a boolean of whether the path exists.
+
+path
+Type: string
+
+The path to a file or directory.
+
+findUpStop
+A Symbol that can be returned by a matcher function to stop the search and cause findUp to immediately return undefined. Useful as a performance optimization in case the current working directory is deeply nested in the filesystem.
+
+import path from 'node:path';
+import {findUp, findUpStop} from 'find-up';
+
+await findUp(directory => {
+ return path.basename(directory) === 'work' ? findUpStop : 'logo.png';
+});
+Related
+find-up-cli - CLI for this module
+package-up - Find the closest package.json file
+package-directory - Find the root directory of an npm package
+resolve-from - Resolve the path of a module like require.resolve() but from a given path.
+
+
+
+Proper-lockfile.
+
+
+proper-lockfile
+NPM version Downloads Build Status Coverage Status Dependency status Dev Dependency status
+
+An inter-process and inter-machine lockfile utility that works on a local or network file system.
+
+Installation
+$ npm install proper-lockfile
+
+Design
+There are various ways to achieve file locking.
+
+This library utilizes the mkdir strategy which works atomically on any kind of file system, even network based ones. The lockfile path is based on the file path you are trying to lock by suffixing it with .lock.
+
+When a lock is successfully acquired, the lockfile's mtime (modified time) is periodically updated to prevent staleness. This allows to effectively check if a lock is stale by checking its mtime against a stale threshold. If the update of the mtime fails several times, the lock might be compromised. The mtime is supported in almost every filesystem.
+
+Comparison
+This library is similar to lockfile but the latter has some drawbacks:
+
+It relies on open with O_EXCL flag which has problems in network file systems. proper-lockfile uses mkdir which doesn't have this issue.
+O_EXCL is broken on NFS file systems; programs which rely on it for performing locking tasks will contain a race condition.
+
+The lockfile staleness check is done via ctime (creation time) which is unsuitable for long running processes. proper-lockfile constantly updates lockfiles mtime to do proper staleness check.
+
+It does not check if the lockfile was compromised which can lead to undesirable situations. proper-lockfile checks the lockfile when updating the mtime.
+
+It has a default value of 0 for the stale option which isn't good because any crash or process kill that the package can't handle gracefully will leave the lock active forever.
+
+Compromised
+proper-lockfile does not detect cases in which:
+
+A lockfile is manually removed and someone else acquires the lock right after
+Different stale/update values are being used for the same file, possibly causing two locks to be acquired on the same file
+proper-lockfile detects cases in which:
+
+Updates to the lockfile fail
+Updates take longer than expected, possibly causing the lock to become stale for a certain amount of time
+As you see, the first two are a consequence of bad usage. Technically, it was possible to detect the first two but it would introduce complexity and eventual race conditions.
+
+Usage
+.lock(file, [options])
+Tries to acquire a lock on file or rejects the promise on error.
+
+If the lock succeeds, a release function is provided that should be called when you want to release the lock. The release function also rejects the promise on error (e.g. when the lock was already compromised).
+
+Available options:
+
+stale: Duration in milliseconds in which the lock is considered stale, defaults to 10000 (minimum value is 5000)
+update: The interval in milliseconds in which the lockfile's mtime will be updated, defaults to stale/2 (minimum value is 1000, maximum value is stale/2)
+retries: The number of retries or a retry options object, defaults to 0
+realpath: Resolve symlinks using realpath, defaults to true (note that if true, the file must exist previously)
+fs: A custom fs to use, defaults to graceful-fs
+onCompromised: Called if the lock gets compromised, defaults to a function that simply throws the error which will probably cause the process to die
+lockfilePath: Custom lockfile path. e.g.: If you want to lock a directory and create the lock file inside it, you can pass file as <dir path> and options.lockfilePath as <dir path>/dir.lock
+const lockfile = require('proper-lockfile');
+
+lockfile.lock('some/file')
+.then((release) => {
+    // Do something while the file is locked
+
+    // Call the provided release function when you're done,
+    // which will also return a promise
+    return release();
+})
+.catch((e) => {
+    // either lock could not be acquired
+    // or releasing it failed
+    console.error(e)
+});
+
+// Alternatively, you may use lockfile('some/file') directly.
+.unlock(file, [options])
+Releases a previously acquired lock on file or rejects the promise on error.
+
+Whenever possible you should use the release function instead (as exemplified above). Still there are cases in which it's hard to keep a reference to it around code. In those cases unlock() might be handy.
+
+Available options:
+
+realpath: Resolve symlinks using realpath, defaults to true (note that if true, the file must exist previously)
+fs: A custom fs to use, defaults to graceful-fs
+lockfilePath: Custom lockfile path. e.g.: If you want to lock a directory and create the lock file inside it, you can pass file as <dir path> and options.lockfilePath as <dir path>/dir.lock
+const lockfile = require('proper-lockfile');
+
+lockfile.lock('some/file')
+.then(() => {
+    // Do something while the file is locked
+
+    // Later..
+    return lockfile.unlock('some/file');
+});
+.check(file, [options])
+Check if the file is locked and its lockfile is not stale, rejects the promise on error.
+
+Available options:
+
+stale: Duration in milliseconds in which the lock is considered stale, defaults to 10000 (minimum value is 5000)
+realpath: Resolve symlinks using realpath, defaults to true (note that if true, the file must exist previously)
+fs: A custom fs to use, defaults to graceful-fs
+lockfilePath: Custom lockfile path. e.g.: If you want to lock a directory and create the lock file inside it, you can pass file as <dir path> and options.lockfilePath as <dir path>/dir.lock
+const lockfile = require('proper-lockfile');
+
+lockfile.check('some/file')
+.then((isLocked) => {
+    // isLocked will be true if 'some/file' is locked, false otherwise
+});
+.lockSync(file, [options])
+Sync version of .lock().
+Returns the release function or throws on error.
+
+.unlockSync(file, [options])
+Sync version of .unlock().
+Throws on error.
+
+.checkSync(file, [options])
+Sync version of .check(). Returns a boolean or throws on error.
+
+Graceful exit
+proper-lockfile automatically removes locks if the process exits, except if the process is killed with SIGKILL or it crashes due to a VM fatal error (e.g.: out of memory).
+
+Tests
+$ npm test
+$ npm test -- --watch during development
+
+The test suite is very extensive. There's even a stress test to guarantee exclusiveness of locks.
+
+License
+Released under the MIT License.
+
+
+
+Load-json-file.
+
+load-json-file
+Read and parse a JSON file
+
+It also strips UTF-8 byte order mark (BOM).
+
+Install
+$ npm install load-json-file
+Usage
+import {loadJsonFile} from 'load-json-file';
+
+console.log(await loadJsonFile('foo.json'));
+//=> {foo: true}
+API
+loadJsonFile(filePath, options?)
+Returns a Promise<unknown> with the parsed JSON.
+
+loadJsonFileSync(filepath, options?)
+Returns the parsed JSON.
+
+options
+Type: object
+
+beforeParse
+Type: Function
+
+Applies a function to the JSON string before parsing.
+
+reviver
+Type: Function
+
+Prescribes how the value originally produced by parsing is transformed, before being returned. See the JSON.parse docs for more.
+
+load-json-file for enterprise
+Available as part of the Tidelift Subscription.
+
+The maintainers of load-json-file and thousands of other packages are working with Tidelift to deliver commercial support and maintenance for the open source dependencies you use to build your applications. Save time, reduce risk, and improve code health, while paying the maintainers of the exact dependencies you use. Learn more.
+
+Related
+write-json-file - Stringify and write JSON to a file atomically.
+
+
+
+Write-json-file.
+
+write-json-file
+Stringify and write JSON to a file atomically
+
+Creates directories for you as needed.
+
+Install
+npm install write-json-file
+Usage
+import {writeJsonFile} from 'write-json-file';
+
+await writeJsonFile('foo.json', {foo: true});
+API
+writeJsonFile(filePath, data, options?)
+Returns a Promise.
+
+writeJsonFileSync(filePath, data, options?)
+options
+Type: object
+
+indent
+Type: string | number | undefined
+Default: '\t'
+
+Indentation as a string or number of spaces.
+
+Pass in undefined for no formatting.
+
+If you set both this and detectIndent, this value will be used when the indentation cannot be detected.
+
+detectIndent
+Type: boolean
+Default: false
+
+Detect indentation automatically if the file exists.
+
+sortKeys
+Type: boolean | Function
+Default: false
+
+Sort the keys recursively.
+
+Optionally pass in a compare function.
+
+replacer
+Type: Function
+
+Passed into JSON.stringify.
+
+mode
+Type: number
+Default: 0o666
+
+The mode used when writing the file.
+
+Related
+load-json-file - Read and parse a JSON file
+make-dir - Make a directory and its parents if needed.
+
+
+
+
+Fs-write-stream-atomic.
+
+fs-write-stream-atomic
+Like fs.createWriteStream(...), but atomic.
+
+Writes to a tmp file and does an atomic fs.rename to move it into place when it's done.
+
+First rule of debugging: It's always a race condition.
+
+USAGE
+var fsWriteStreamAtomic = require('fs-write-stream-atomic')
+// options are optional.
+var write = fsWriteStreamAtomic('output.txt', options)
+var read = fs.createReadStream('input.txt')
+read.pipe(write)
+
+// When the write stream emits a 'finish' or 'close' event,
+// you can be sure that it is moved into place, and contains
+// all the bytes that were written to it, even if something else
+// was writing to `output.txt` at the same time.
+fsWriteStreamAtomic(filename, [options])
+filename The file we want to write to
+options
+chown User and group to set ownership after write
+uid
+gid
+encoding default = 'utf8'
+mode default = 0666
+flags default = 'w' .
+
+
+
+Filenamify.
+
+filenamify
+Convert a string to a valid safe filename
+
+On Unix-like systems, / is reserved. On Windows, <>:"/\|?* along with trailing periods are reserved.
+
+Install
+npm install filenamify
+Usage
+import filenamify from 'filenamify';
+
+filenamify('<foo/bar>');
+//=> '!foo!bar!'
+
+filenamify('foo:"bar"', {replacement: '🐴'});
+//=> 'foo🐴bar🐴'
+API
+filenamify(string, options?)
+Convert a string to a valid filename.
+
+filenamifyPath(path, options?)
+Convert the filename in a path a valid filename and return the augmented path.
+
+import {filenamifyPath} from 'filenamify';
+
+filenamifyPath('foo:bar');
+//=> 'foo!bar'
+options
+Type: object
+
+replacement
+Type: string
+Default: '!'
+
+String to use as replacement for reserved filename characters.
+
+Cannot contain: < > : " / \ | ? *
+
+maxLength
+Type: number
+Default: 100
+
+Truncate the filename to the given length.
+
+Only the base of the filename is truncated, preserving the extension. If the extension itself is longer than maxLength, you will get a string that is longer than maxLength, so you need to check for that if you allow arbitrary extensions.
+
+Systems generally allow up to 255 characters, but we default to 100 for usability reasons.
+
+Browser-only import
+You can also import filenamify/browser, which only imports filenamify and not filenamifyPath, which relies on path being available or polyfilled. Importing filenamify this way is therefore useful when it is shipped using webpack or similar tools, and if filenamifyPath is not needed.
+
+import filenamify from 'filenamify/browser';
+
+filenamify('<foo/bar>');
+//=> '!foo!bar!'
+Related
+filenamify-cli - CLI for this module
+filenamify-url - Convert a URL to a valid filename
+valid-filename - Check if a string is a valid filename
+unused-filename - Get a unused filename by appending a number if it exists
+slugify - Slugify a string.
+
+
+
+infs.
+
+lnfs Build Status
+Safely force create symlinks
+
+Install
+$ npm install lnfs
+Usage
+const lnfs = require('lnfs');
+
+lnfs('foo.txt', 'bar.txt').then(() => {
+ console.log('Symlink successfully created!');
+});
+API
+lnfs(src, dest, [type])
+Returns a Promise with the path to the symlink.
+
+src
+Type: string
+
+Path to source file.
+
+dest
+Type: string
+
+Path to destination.
+
+type
+Type: string
+Default: file
+
+Can be set to dir, file, or junction and is only available on Windows (ignored on other platforms).
+
+Related
+lnfs-cli - CLI for this module
+License
+MIT © Kevin Mårtensson.
+
+
+
+istextorbinary.
+
+Is Text or Binary?
+Status of the GitHub Workflow: bevry NPM version NPM downloads
+GitHub Sponsors donate button ThanksDev donate button Patreon donate button Liberapay donate button Buy Me A Coffee donate button Open Collective donate button crypto donate button PayPal donate button
+Discord server badge Twitch community badge
+
+Determine if a filename and/or buffer is text or binary. Smarter detection than the other solutions.
+
+Determination works like so:
+
+Extension Check: If filename is available, check if any of its extensions (from right to left) are an text extension or a binary extension, this is near instant.
+Contents Check: If no filename was provided, or the extension check was indeterminate, then check the contents of the buffer.
+The extension check will check each of the filename's extensions, from right to left. This is done as certain applications utilise multiple extensions for transformations, such as app.x.y may tell a compiler to transform from x format to y format, in this case perhaps x is not a recognized extension but y is, in which case we can make use of that to provide superior accuracy and convenience compared to just checking the rightmost extension.
+
+The contents check (with the default options) will check 24 bytes at the start, middle, and end of the buffer. History has shown that checking all three locations is mandatory for accuracy, and that anything less is not accurate. This technique offers superior performance while still offering superior accuracy. Alternatives generally just do 1000 bytes at the start, which is slower, and inaccurate.
+
+One cannot just do the contents check alone because UTF16 characters are indistinguishable from binary which would return an inaccurate result, hence why the combination is necessary for accuracy, with performance for known extensions a side-effect.
+
+As such, this library's combination of extension check (if filename is provided), then contents check (if buffer is provided), offers superior performance and accuracy to alternatives.
+
+Ever since 2012, this module's superior accuracy and performance has been essential to the operation of DocPad and its other dependents.
+
+Usage
+Complete API Documentation.
+
+import { isText, isBinary, getEncoding } from 'istextorbinary'
+or
+
+const { isText, isBinary, getEncoding } = require('istextorbinary')
+then
+
+isText(aFilename) // returns true if a text file otherwise false, checks only filename
+isText(null, aBuffer) // returns true if a text file otherwise false, checks only buffer
+isText(aFilename, aBuffer) // returns true if a text file otherwise false, checks filename then buffer
+isText(null, null) // returns null
+
+isBinary(aFilename) // returns true if a binary file otherwise false, checks only filename
+isBinary(null, aBuffer) // returns true if a binary file otherwise false, checks only buffer
+isBinary(aFilename, aBuffer) // returns true if a binary file otherwise false, checks filename then buffer
+isBinary(null, null) // returns null
+
+getEncoding(aBuffer) // returns 'binary' if it contained non-utf8 characters, otherwise returns 'utf8'
+Install
+npm
+Install: npm install --save istextorbinary
+Import: import * as pkg from ('istextorbinary')
+Require: const pkg = require('istextorbinary')
+Deno
+import * as pkg from 'https://unpkg.com/istextorbinary@^9.5.0/edition-deno/index.ts'
+Skypack
+<script type="module">
+    import * as pkg from '//cdn.skypack.dev/istextorbinary@^9.5.0'
+</script>
+unpkg
+<script type="module">
+    import * as pkg from '//unpkg.com/istextorbinary@^9.5.0'
+</script>
+jspm
+<script type="module">
+    import * as pkg from '//dev.jspm.io/istextorbinary@9.5.0'
+</script>
+Editions
+This package is published with the following editions:
+
+istextorbinary aliases istextorbinary/index.cjs which uses the Editions Autoloader to automatically select the correct edition for the consumer's environment
+istextorbinary/source/index.ts is TypeScript source code with Import for modules
+istextorbinary/edition-browsers/index.js is TypeScript compiled against ES2022 for web browsers with Import for modules
+istextorbinary/edition-es2022/index.js is TypeScript compiled against ES2022 for Node.js 14 || 16 || 18 || 20 || 21 with Require for modules
+istextorbinary/edition-es2017/index.js is TypeScript compiled against ES2017 for Node.js 6 || 8 || 10 || 12 || 14 || 16 || 18 || 20 || 21 with Require for modules
+istextorbinary/edition-es5/index.js is TypeScript compiled against ES5 for Node.js 4 || 6 || 8 || 10 || 12 || 14 || 16 || 18 || 20 || 21 with Require for modules
+istextorbinary/edition-es2017-esm/index.js is TypeScript compiled against ES2017 for Node.js 12 || 14 || 16 || 18 || 20 || 21 with Import for modules
+istextorbinary/edition-types/index.d.ts is TypeScript compiled Types with Import for modules
+istextorbinary/edition-deno/index.ts is TypeScript source code made to be compatible with Deno
+History
+Discover the release history by heading on over to the HISTORY.md file.
+
+Backers
+Code
+Discover how to contribute via the CONTRIBUTING.md file.
+
+Authors
+Benjamin Lupton — Accelerating collaborative wisdom.
+Maintainers
+Benjamin Lupton — Accelerating collaborative wisdom.
+Contributors
+Benjamin Lupton — view contributions
+Ian Sibner — view contributions
+Kukhyeon Heo — view contributions
+Michael Duane Mooring — view contributions
+Rob Loach — view contributions
+Sean — view contributions
+shinnn — view contributions
+Finances
+GitHub Sponsors donate button ThanksDev donate button Patreon donate button Liberapay donate button Buy Me A Coffee donate button Open Collective donate button crypto donate button PayPal donate button.
+
+License
+Unless stated otherwise all works are:
+
+Copyright © Benjamin Lupton
+and licensed under:
+
+Artistic License 2.0
+
+
+
+Fs-jetpack.
+
+fs-jetpack codecov
+API for your everyday file system manipulations, much more convenient than fs or fs-extra. You will especially appreciate it as a scripting/tooling library and for your build pipelines.
+
+Table of Contents
+Key Concepts
+Getting Started
+
+API:
+append
+copy
+createReadStream
+createWriteStream
+cwd
+dir
+exists
+file
+find
+inspect
+inspectTree
+list
+move
+path
+read
+remove
+rename
+symlink
+tmpDir
+write
+
+Key Concepts
+Why not use more than one CWD?
+You can create many fs-jetpack objects with different internal working directories (which are independent from process.cwd()) and work on directories in a little more object-oriented manner.
+
+const src = jetpack.cwd("path/to/source");
+const dest = jetpack.cwd("/some/different/path/to/destination");
+src.copy("foo.txt", dest.path("bar.txt"));
+JSON is a first class citizen
+You can write JavaScript object directly to disk and it will be transformed into JSON automatically.
+
+const obj = { greet: "Hello World!" };
+jetpack.write("file.json", obj);
+Then you can get your object back just by telling read method that it's a JSON.
+
+const obj = jetpack.read("file.json", "json");
+Automatic handling of ENOENT errors
+Everyone who has a lot to do with file system probably is sick of seeing error "ENOENT, no such file or directory". Fs-jetpack tries to recover from this.
+
+For write/creation operations, if any of parent directories doesn't exist jetpack will just create them as well (like mkdir -p works).
+For read/inspect operations, if file or directory doesn't exist undefined is returned instead of throwing.
+Sync & async harmony
+API has the same set of synchronous and asynchronous methods. All async methods are promise based (no callbacks).
+
+Commonly used naming convention in node.js world has been flipped in this API, so no method() (async) and methodSync() naming. Here the convention is methodAsync() and method() (sync). I know this looks wrong to you, but bear with me. Thanks to that, you always know how fs-jetpack method behaves, just by looking at the name: If you don't see the word "Async", this method returns value immediately, if you do, promise is returned. Standard node.js naming can't give you this clarity.
+
+// Synchronous call
+const data = jetpack.read('file.txt');
+console.log(data);
+
+// Asynchronous call
+const data = await jetpack.readAsync('file.txt');
+console.log(data);
+All API methods cooperate nicely with each other
+Let's say you want to create folder structure as demonstrated in comment below. Piece of cake!
+
+// .
+// |- greets
+// |- greet.txt
+// |- greet.json
+// |- greets-i18n
+// |- polish.txt
+
+jetpack
+  .dir("greets")
+  .file("greet.txt", { content: "Hello world!" })
+  .file("greet.json", { content: { greet: "Hello world!" } })
+  .cwd("..")
+  .dir("greets-i18n")
+  .file("polish.txt", { content: "Witaj świecie!" });
+Need to copy whole directory of files, but first perform some transformations on each file?
+
+const src = jetpack.cwd("path/to/source/folder");
+const dst = jetpack.cwd("path/to/destination");
+
+src.find({ matching: "*" }).forEach((path) => {
+  const content = src.read(path);
+  const transformedContent = transformTheFileHoweverYouWant(content);
+  dst.write(path, transformedContent);
+});
+Need to delete all temporary and log files inside my_folder tree?
+
+jetpack.find("my_folder", { matching: ["*.tmp", "*.log"] }).forEach(jetpack.remove);
+Need to perform temporary data transformations?
+
+const dir = jetpack.tmpDir();
+dir.write("data.txt", myData);
+// Perform some operations on the data and when you're done
+// and don't need the folder any longer just call...
+dir.remove();
+Getting Started
+Installation
+npm install fs-jetpack
+Import to your code:
+
+const jetpack = require("fs-jetpack");
+Usage with TypeScript
+Starting from v2.1.0 fs-jetpack is TypeScript compatible. But for backwards compatibility purposes all types and interfaces are reachable through special path fs-jetpack/types.
+
+// Import fs-jetpack into TypeScript code (the jetpack typings will be loaded as well).
+import * as jetpack from "fs-jetpack";
+
+// Import one of jetpack's interfaces to cast it on a variable declaration.
+import { InspectResult } from "fs-jetpack/types";
+let result: InspectResult = jetpack.inspect("foo");
+Upgrading to New Version
+This API is considered stable and all breaking changes to it are done as completely last resort. It also uses "better safe than sorry" approach to bumping major version number. So in 99.9% of cases you can upgrade to latest version with no worries, because all major version bumps so far, were due to edge case behaviour changes.
+
+API
+append(path, data, [options])
+asynchronous: appendAsync(path, data, [options])
+
+Appends given data to the end of file. If file or any parent directory doesn't exist it will be created.
+
+arguments:
+path the path to file.
+data data to append (can be String or Buffer).
+options (optional) Object with possible fields:
+
+mode if the file doesn't exist yet, will be created with given mode. Value could be number (eg. 0o700) or string (eg. '700').
+returns:
+Nothing.
+
+copy(from, to, [options])
+asynchronous: copyAsync(from, to, [options])
+
+Copies given file or directory (with everything inside).
+
+arguments:
+from path to location you want to copy.
+to path to destination location, where the copy should be placed.
+options (optional) additional options for customization. Is an Object with possible fields:
+
+overwrite (default: false) Whether to overwrite destination path when it already exists. Can be Boolean or Function. If false, an error will be thrown if it already exists. If true, the overwrite will be performed (for directories, this overwrite consists of a recursive merge - i.e. only files that already exist in the destination directory will be overwritten). If a function was provided, every time there is a file conflict while copying the function will be invoked with inspect objects of both: source and destination file and overwrites the file only if true has been returned from the function (see example below). In async mode, the overwrite function can also return a promise, so you can perform multi step processes to determine if file should be overwritten or not (see example below).
+matching if defined will actually copy only items matching any of specified glob patterns and omit everything else (all possible globs are described further in this readme).
+ignoreCase (default false) whether or not case should be ignored when processing glob patterns passed through the matching option.
+returns:
+Nothing.
+
+examples:
+
+// Copies a file (and replaces it if one already exists in 'foo' directory)
+jetpack.copy("file.txt", "foo/file.txt", { overwrite: true });
+
+// Copies files from folder foo_1 to foo_final, but overwrites in
+// foo_final only files which are newer in foo_1.
+jetpack.copy("foo_1", "foo_final", {
+  overwrite: (srcInspectData, destInspectData) => {
+    return srcInspectData.modifyTime > destInspectData.modifyTime;
+  }
+});
+
+// Asynchronously copies files from folder foo_1 to foo_final,
+// but overwrites only files containing "John Doe" string.
+jetpack.copyAsync("foo_1", "foo_final", {
+  overwrite: (srcInspectData, destInspectData) => {
+    return jetpack.readAsync(srcInspectData.absolutePath).then(data => {
+      return data.includes("John Doe");
+    });
+  }
+});
+
+// Copies only '.md' files from 'foo' (and subdirectories of 'foo') to 'bar'.
+jetpack.copy("foo", "bar", { matching: "*.md" });
+// Copies only '.md' and '.txt' files from 'foo' (and subdirectories of 'foo') to 'bar'.
+jetpack.copy("foo", "bar", { matching: ["*.md", "*.txt"] });
+
+// You can filter previous matches by defining negated pattern further in the order:
+// Copies only '.md' files from 'foo' (and subdirectories of 'foo') to 'bar'
+// but will skip file '!top-secret.md'.
+jetpack.copy("foo", "bar", { matching: ["*.md", "!top-secret.md"] });
+// Copies only '.md' files from 'foo' (and subdirectories of 'foo') to 'bar'
+// but will skip all files in 'foo/top-secret' directory.
+jetpack.copy("foo", "bar", { matching: ["*.md", "!top-secret/**/*"] });
+
+// All patterns are anchored to directory you want to copy, not to CWD.
+// So in this example directory 'dir1/dir2/images' will be copied
+// to 'copied-dir2/images'
+jetpack.copy("dir1/dir2", "copied-dir2", {
+  matching: "images/**"
+});
+createReadStream(path, [options])
+Just an alias to vanilla fs.createReadStream.
+
+createWriteStream(path, [options])
+Just an alias to vanilla fs.createWriteStream.
+
+cwd([path...])
+Returns Current Working Directory (CWD) for this instance of jetpack, or creates new jetpack object with given path as its internal CWD.
+
+Note: fs-jetpack never changes value of process.cwd(), the CWD we are talking about here is internal value inside every jetpack instance.
+
+arguments:
+path... (optional) path (or many path parts) to become new CWD. Could be absolute, or relative. If relative path given new CWD will be resolved basing on current CWD of this jetpack instance.
+
+returns:
+If path not specified, returns CWD path of this jetpack object. For main instance of fs-jetpack it is always process.cwd().
+If path specified, returns new jetpack object (totally the same thing as main jetpack). The new object resolves paths according to its internal CWD, not the global one (process.cwd()).
+
+examples:
+
+// Let's assume that process.cwd() outputs...
+console.log(process.cwd()); // '/one/two/three'
+// jetpack.cwd() will always return the same value as process.cwd()
+console.log(jetpack.cwd()); // '/one/two/three'
+
+// Now let's create new CWD context...
+const jetParent = jetpack.cwd("..");
+console.log(jetParent.cwd()); // '/one/two'
+// ...and use this new context.
+jetParent.dir("four"); // we just created directory '/one/two/four'
+
+// One CWD context can be used to create next CWD context.
+const jetParentParent = jetParent.cwd("..");
+console.log(jetParentParent.cwd()); // '/one'
+
+// When many parameters specified they are treated as parts of path to resolve
+const sillyCwd = jetpack.cwd("a", "b", "c");
+console.log(sillyCwd.cwd()); // '/one/two/three/a/b/c'
+dir(path, [criteria])
+asynchronous: dirAsync(path, [criteria])
+
+Ensures that directory on given path exists and meets given criteria. If any criterium is not met it will be after this call. If any parent directory in path doesn't exist it will be created (like mkdir -p).
+
+If the given path already exists but is not a directory, an error will be thrown.
+
+arguments:
+path path to directory to examine.
+criteria (optional) criteria to be met by the directory. Is an Object with possible fields:
+
+empty (default: false) whether directory should be empty (no other files or directories inside). If set to true and directory contains any files or subdirectories all of them will be deleted.
+mode ensures directory has specified mode. If not set and directory already exists, current mode will be preserved. Value could be number (eg. 0o700) or string (eg. '700').
+returns:
+New CWD context with directory specified in path as CWD (see docs of cwd() method for explanation).
+
+examples:
+
+// Creates directory if doesn't exist
+jetpack.dir("new-dir");
+
+// Makes sure directory mode is 0700 and that it's empty
+jetpack.dir("empty-dir", { empty: true, mode: "700" });
+
+// Because dir returns new CWD context pointing to just
+// created directory you can create dir chains.
+jetpack
+  .dir("main-dir") // creates 'main-dir'
+  .dir("sub-dir"); // creates 'main-dir/sub-dir'
+exists(path)
+asynchronous: existsAsync(path)
+
+Checks whether something exists on given path. This method returns values more specific than true/false to protect from errors like "I was expecting directory, but it was a file".
+
+returns:
+
+false if path doesn't exist.
+"dir" if path is a directory.
+"file" if path is a file.
+"other" if none of the above.
+file(path, [criteria])
+asynchronous: fileAsync(path, [criteria])
+
+Ensures that file exists and meets given criteria. If any criterium is not met it will be after this call. If any parent directory in path doesn't exist it will be created (like mkdir -p).
+
+arguments:
+path path to file to examine.
+criteria (optional) criteria to be met by the file. Is an Object with possible fields:
+
+content sets file content. Can be String, Buffer, Object or Array. If Object or Array given to this parameter data will be written as JSON.
+jsonIndent (defaults to 2) if writing JSON data this tells how many spaces should one indentation have.
+mode ensures file has specified mode. If not set and file already exists, current mode will be preserved. Value could be number (eg. 0o700) or string (eg. '700').
+returns:
+Jetpack object you called this method on (self).
+
+examples:
+
+// Creates file if doesn't exist
+jetpack.file("something.txt");
+
+// Creates file with mode '777' and content 'Hello World!'
+jetpack.file("hello.txt", { mode: "777", content: "Hello World!" });
+find([path], searchOptions)
+asynchronous: findAsync([path], searchOptions)
+
+Finds in directory specified by path all files fulfilling searchOptions. Returned paths are relative to current CWD of jetpack instance.
+
+arguments:
+path (optional, defaults to '.') path to start search in (all subdirectories will be searched).
+searchOptions is an Object with possible fields:
+
+matching (default "*") glob patterns of files you want to find (all possible globs are described further in this readme).
+filter (default undefined) function that is called on each matched path with inspect object of that path as an argument. Return true or false to indicate whether given path should stay on list or should be filtered out (see example below).
+files (default true) whether or not should search for files.
+directories (default false) whether or not should search for directories.
+recursive (default true) whether the whole directory tree should be searched recursively, or only one-level of given directory (excluding it's subdirectories).
+ignoreCase (false otherwise) whether or not case should be ignored when processing glob patterns passed through the matching option.
+returns:
+Array of found paths.
+
+examples:
+
+// Finds all files inside 'foo' directory and its subdirectories
+jetpack.find("foo");
+
+// Finds all files which has 2015 in the name
+jetpack.find("my-work", { matching: "*2015*" });
+
+// Finds all '.txt' files inside 'foo/bar' directory and its subdirectories
+jetpack.find("foo", { matching: "bar/**/*.txt" });
+// Finds all '.txt' files inside 'foo/bar' directory WITHOUT subdirectories
+jetpack.find("foo", { matching: "bar/*.txt" });
+
+// Finds all '.txt' files that were modified after 2019-01-01
+const borderDate = new Date("2019-01-01")
+jetpack.find("foo", {
+  matching: "*.txt",
+  filter: (inspectObj) => {
+    return inspectObj.modifyTime > borderDate
+  }
+});
+
+// Finds all '.js' files inside 'my-project' but excluding those in 'vendor' subtree.
+jetpack.find("my-project", { matching: ["*.js", "!vendor/**/*"] });
+
+// Looks for all directories named 'foo' (and will omit all files named 'foo').
+jetpack.find("my-work", { matching: ["foo"], files: false, directories: true });
+
+// Finds all '.txt' files inside 'foo' directory WITHOUT subdirectories
+jetpack.find("foo", { matching: "./*.txt" });
+// This line does the same as the above, but has better performance
+// (skips looking in subdirectories)
+jetpack.find("foo", { matching: "*.txt", recursive: false });
+
+// Path parameter might be omitted and CWD is used as path in that case.
+const myStuffDir = jetpack.cwd("my-stuff");
+myStuffDir.find({ matching: ["*.md"] });
+
+// You can chain find() with different jetpack methods for more power.
+// For example lets delete all `.tmp` files inside `foo` directory
+jetpack
+  .find("foo", {
+    matching: "*.tmp"
+  })
+  .forEach(jetpack.remove);
+inspect(path, [options])
+asynchronous: inspectAsync(path, [options])
+
+Inspects given path (replacement for fs.stat). Returned object by default contains only very basic, not platform-dependent properties (so you have something e.g. your unit tests can rely on), you can enable more properties through options object.
+
+arguments:
+path path to inspect.
+options (optional). Possible values:
+
+checksum if specified will return checksum of inspected file. Possible values are strings 'md5', 'sha1', 'sha256' or 'sha512'. If given path is a directory this field is ignored.
+mode (default false) if set to true will add file mode (unix file permissions) value.
+times (default false) if set to true will add atime, mtime and ctime fields (here called accessTime, modifyTime, changeTime and birthTime).
+absolutePath (default false) if set to true will add absolute path to this resource.
+symlinks (default 'report') if a given path is a symlink by default inspect will report that symlink (not follow it). You can flip this behaviour by setting this option to 'follow'.
+returns: undefined if given path doens't exist.
+Otherwise Object of structure:
+
+{
+  name: "my_dir",
+  type: "file", // possible values: "file", "dir", "symlink"
+  size: 123, // size in bytes, this is returned only for files
+  // if checksum option was specified:
+  md5: '900150983cd24fb0d6963f7d28e17f72',
+  // if mode option was set to true:
+  mode: 33204,
+  // if times option was set to true:
+  accessTime: [object Date],
+  modifyTime: [object Date],
+  changeTime: [object Date],
+  birthTime: [object Date]
+}
+inspectTree(path, [options])
+asynchronous: inspectTreeAsync(path, [options])
+
+Calls inspect recursively on given path so it creates tree of all directories and sub-directories inside it.
+
+arguments:
+path the starting path to inspect.
+options (optional). Possible values:
+
+checksum if specified will also calculate checksum of every item in the tree. Possible values are strings 'md5', 'sha1', 'sha256' or 'sha512'. Checksums for directories are calculated as checksum of all children' checksums plus their filenames (see example below).
+times (default false) if set to true will add atime, mtime and ctime fields (here called accessTime, modifyTime and changeTime) to each tree node.
+relativePath if set to true every tree node will have relative path anchored to root inspected folder.
+symlinks (default 'report') if a given path is a symlink by default inspectTree will report that symlink (not follow it). You can flip this behaviour by setting this option to 'follow'.
+returns:
+undefined if given path doesn't exist. Otherwise tree of inspect objects like:
+
+{
+    name: 'my_dir',
+    type: 'dir',
+    size: 123, // this is combined size of all items in this directory
+    relativePath: '.',
+    md5: '11c68d9ad988ff4d98768193ab66a646',
+    // checksum of this directory was calculated as:
+    // md5(child[0].name + child[0].md5 + child[1].name + child[1].md5)
+    children: [
+        {
+            name: 'empty',
+            type: 'dir',
+            size: 0,
+            relativePath: './dir',
+            md5: 'd41d8cd98f00b204e9800998ecf8427e',
+            children: []
+        },{
+            name: 'file.txt',
+            type: 'file',
+            size: 123,
+            relativePath: './file.txt',
+            md5: '900150983cd24fb0d6963f7d28e17f72'
+        }
+    ]
+}
+list([path])
+asynchronous: listAsync(path)
+
+Lists the contents of directory. Equivalent of fs.readdir.
+
+arguments:
+path (optional) path to directory you would like to list. If not specified defaults to CWD.
+
+returns:
+Array of file names inside given path, or undefined if given path doesn't exist.
+
+move(from, to, [options])
+asynchronous: moveAsync(from, to, [options])
+
+Moves given path to new location.
+
+arguments:
+from path to directory or file you want to move.
+to path where the thing should be moved.
+options (optional) additional options for customization. Is an Object with possible fields:
+
+overwrite (default: false) Whether to overwrite destination path when it already exists. If true, the overwrite will be performed.
+returns:
+Nothing.
+
+path(parts...)
+Returns path resolved to internal CWD of this jetpack object.
+
+arguments:
+parts strings to join and resolve as path (as many as you like).
+
+returns:
+Resolved path as string.
+
+examples:
+
+jetpack.cwd(); // if it returns '/one/two'
+jetpack.path(); // this will return the same '/one/two'
+jetpack.path("three"); // this will return '/one/two/three'
+jetpack.path("..", "four"); // this will return '/one/four'
+read(path, [returnAs])
+asynchronous: readAsync(path, [returnAs])
+
+Reads content of file.
+
+arguments:
+path path to file.
+returnAs (optional) how the content of file should be returned. Is a string with possible values:
+
+'utf8' (default) content will be returned as UTF-8 String.
+'buffer' content will be returned as a Buffer.
+'json' content will be returned as parsed JSON object.
+'jsonWithDates' content will be returned as parsed JSON object, and date strings in ISO format will be automatically turned into Date objects.
+returns:
+File content in specified format, or undefined if file doesn't exist.
+
+remove([path])
+asynchronous: removeAsync([path])
+
+Deletes given path, no matter what it is (file, directory or non-empty directory). If path already doesn't exist terminates gracefully without throwing, so you can use it as 'ensure path doesn't exist'.
+
+arguments:
+path (optional) path to file or directory you want to remove. If not specified the remove action will be performed on current working directory (CWD).
+
+returns:
+Nothing.
+
+examples:
+
+// Deletes file
+jetpack.remove("my_work/notes.txt");
+
+// Deletes directory "important_stuff" and everything inside
+jetpack.remove("my_work/important_stuff");
+
+// Remove can be called with no parameters and will default to CWD then.
+// In this example folder 'my_work' will cease to exist.
+const myStuffDir = jetpack.cwd("my_stuff");
+myStuffDir.remove();
+rename(path, newName, [options])
+asynchronous: renameAsync(path, newName, [options])
+
+Renames given file or directory.
+
+arguments:
+path path to thing you want to change name of.
+newName new name for this thing (not full path, just a name).
+options (optional) additional options for customization. Is an Object with possible fields:
+
+overwrite (default: false) Whether to overwrite destination path when it already exists. If true, the overwrite will be performed.
+returns:
+Nothing.
+
+examples:
+
+// The file "my_work/important.md" will be renamed to "my_work/very_important.md"
+jetpack.rename("my_work/important.txt", "very_important.md");
+symlink(symlinkValue, path)
+asynchronous: symlinkAsync(symlinkValue, path)
+
+Creates symbolic link.
+
+arguments:
+symlinkValue path where symbolic link should point.
+path path where symbolic link should be put.
+
+returns:
+Nothing.
+
+tmpDir([options])
+asynchronous: tmpDirAsync([options])
+
+Creates temporary directory with random, unique name.
+
+arguments:
+options (optional) Object with possible fields:
+
+prefix prefix to be added to created random directory name. Defaults to none.
+basePath the path where temporary directory should be created. Defaults to https://nodejs.org/api/os.html#os_os_tmpdir.
+returns:
+New CWD context with temporary directory specified in path as CWD (see docs of cwd() method for explanation).
+
+examples:
+
+// Creates temporary directory, e.g. /tmp/90ed0f0f4a0ba3b1433c5b51ad8fc76b
+// You can interact with this directory by returned CWD context.
+const dirContext = jetpack.tmpDir();
+
+// Creates temporary directory with a prefix, e.g. /tmp/foo_90ed0f0f4a0ba3b1433c5b51ad8fc76b
+jetpack.tmpDir({ prefix: "foo_" });
+
+// Creates temporary directory on given path, e.g. /some/other/path/90ed0f0f4a0ba3b1433c5b51ad8fc76b
+jetpack.tmpDir({ basePath: "/some/other/path" });
+
+// Creates temporary directory on jetpack.cwd() path
+jetpack.tmpDir({ basePath: "." });
+
+// The method returns new jetpack context, so you can easily clean your
+// temp files after you're done.
+const dir = jetpack.tmpDir();
+dir.write("foo.txt", data);
+// ...and when you're done using the dir...
+dir.remove();
+write(path, data, [options])
+asynchronous: writeAsync(path, data, [options])
+
+Writes data to file. If any parent directory in path doesn't exist it will be created (like mkdir -p).
+
+arguments:
+path path to file.
+data data to be written. This could be String, Buffer, Object or Array (if last two used, the data will be outputted into file as JSON).
+options (optional) Object with possible fields:
+
+mode file will be created with given mode. Value could be number (eg. 0o700) or string (eg. '700').
+atomic (default false) if set to true the file will be written using strategy which is much more resistant to data loss. The trick is very simple, read this to get the concept.
+jsonIndent (defaults to 2) if writing JSON data this tells how many spaces should one indentation have.
+returns:
+Nothing.
+
+Matching patterns
+API methods copy and find have matching option. Those are all the possible tokens to use there:
+
+* - Matches 0 or more characters in a single path portion.
+? - Matches 1 character.
+! - Used as the first character in pattern will invert the matching logic (match everything what is not matched by tokens further in this pattern).
+[...] - Matches a range of characters, similar to a RegExp range. If the first character of the range is ! or ^ then it matches any character not in the range.
+@(pattern|pat*|pat?ern) - Matches exactly one of the patterns provided.
++(pattern|pat*|pat?ern) - Matches one or more occurrences of the patterns provided.
+?(pattern|pat*|pat?ern) - Matches zero or one occurrence of the patterns provided.
+*(pattern|pat*|pat?ern) - Matches zero or more occurrences of the patterns provided.
+!(pattern|pat*|pat?ern) - Matches anything that does not match any of the patterns provided.
+** - If a "globstar" is alone in a path portion, then it matches zero or more directories and subdirectories.
+(explanation borrowed from glob which is using the same matching library as this project)
+
+
+
+Fs-extra.
+
+Node.js: fs-extra
+fs-extra adds file system methods that aren't included in the native fs module and adds promise support to the fs methods. It also uses graceful-fs to prevent EMFILE errors. It should be a drop in replacement for fs.
+
+npm Package License build status downloads per month JavaScript Style Guide
+
+Why?
+I got tired of including mkdirp, rimraf, and ncp in most of my projects.
+
+Installation
+npm install fs-extra
+Usage
+CommonJS
+fs-extra is a drop in replacement for native fs. All methods in fs are attached to fs-extra. All fs methods return promises if the callback isn't passed.
+
+You don't ever need to include the original fs module again:
+
+const fs = require('fs') // this is no longer necessary
+you can now do this:
+
+const fs = require('fs-extra')
+or if you prefer to make it clear that you're using fs-extra and not fs, you may want to name your fs variable fse like so:
+
+const fse = require('fs-extra')
+you can also keep both, but it's redundant:
+
+const fs = require('fs')
+const fse = require('fs-extra')
+ESM
+There is also an fs-extra/esm import, that supports both default and named exports. However, note that fs methods are not included in fs-extra/esm; you still need to import fs and/or fs/promises seperately:
+
+import { readFileSync } from 'fs'
+import { readFile } from 'fs/promises'
+import { outputFile, outputFileSync } from 'fs-extra/esm'
+Default exports are supported:
+
+import fs from 'fs'
+import fse from 'fs-extra/esm'
+// fse.readFileSync is not a function; must use fs.readFileSync
+but you probably want to just use regular fs-extra instead of fs-extra/esm for default exports:
+
+import fs from 'fs-extra'
+// both fs and fs-extra methods are defined
+Sync vs Async vs Async/Await
+Most methods are async by default. All async methods will return a promise if the callback isn't passed.
+
+Sync methods on the other hand will throw if an error occurs.
+
+Also Async/Await will throw an error if one occurs.
+
+Example:
+
+const fs = require('fs-extra')
+
+// Async with promises:
+fs.copy('/tmp/myfile', '/tmp/mynewfile')
+  .then(() => console.log('success!'))
+  .catch(err => console.error(err))
+
+// Async with callbacks:
+fs.copy('/tmp/myfile', '/tmp/mynewfile', err => {
+  if (err) return console.error(err)
+  console.log('success!')
+})
+
+// Sync:
+try {
+  fs.copySync('/tmp/myfile', '/tmp/mynewfile')
+  console.log('success!')
+} catch (err) {
+  console.error(err)
+}
+
+// Async/Await:
+async function copyFiles () {
+  try {
+    await fs.copy('/tmp/myfile', '/tmp/mynewfile')
+    console.log('success!')
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+copyFiles()
+Methods
+Async
+copy
+emptyDir
+ensureFile
+ensureDir
+ensureLink
+ensureSymlink
+mkdirp
+mkdirs
+move
+outputFile
+outputJson
+pathExists
+readJson
+remove
+writeJson
+Sync
+copySync
+emptyDirSync
+ensureFileSync
+ensureDirSync
+ensureLinkSync
+ensureSymlinkSync
+mkdirpSync
+mkdirsSync
+moveSync
+outputFileSync
+outputJsonSync
+pathExistsSync
+readJsonSync
+removeSync
+writeJsonSync
+NOTE: You can still use the native Node.js methods. They are promisified and copied over to fs-extra. See notes on fs.read(), fs.write(), & fs.writev()
+
+What happened to walk() and walkSync()?
+They were removed from fs-extra in v2.0.0. If you need the functionality, walk and walkSync are available as separate packages, klaw and klaw-sync.
+
+Third Party
+CLI
+fse-cli allows you to run fs-extra from a console or from npm scripts.
+
+TypeScript
+If you like TypeScript, you can use fs-extra with it: https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/fs-extra
+
+File / Directory Watching
+If you want to watch for changes to files or directories, then you should use chokidar.
+
+Obtain Filesystem (Devices, Partitions) Information
+fs-filesystem allows you to read the state of the filesystem of the host on which it is run. It returns information about both the devices and the partitions (volumes) of the system.
+
+Misc.
+fs-extra-debug - Send your fs-extra calls to debug.
+mfs - Monitor your fs-extra calls.
+Hacking on fs-extra
+Wanna hack on fs-extra? Great! Your help is needed! fs-extra is one of the most depended upon Node.js packages. This project uses JavaScript Standard Style - if the name or style choices bother you, you're gonna have to get over it :) If standard is good enough for npm, it's good enough for fs-extra.
+
+js-standard-style
+
+What's needed?
+
+First, take a look at existing issues. Those are probably going to be where the priority lies.
+More tests for edge cases. Specifically on different platforms. There can never be enough tests.
+Improve test coverage.
+Note: If you make any big changes, you should definitely file an issue for discussion first.
+
+Running the Test Suite
+fs-extra contains hundreds of tests.
+
+npm run lint: runs the linter (standard)
+npm run unit: runs the unit tests
+npm run unit-esm: runs tests for fs-extra/esm exports
+npm test: runs the linter and all tests
+When running unit tests, set the environment variable CROSS_DEVICE_PATH to the absolute path of an empty directory on another device (like a thumb drive) to enable cross-device move tests.
+
+Windows
+If you run the tests on the Windows and receive a lot of symbolic link EPERM permission errors, it's because on Windows you need elevated privilege to create symbolic links. You can add this to your Windows's account by following the instructions here: http://superuser.com/questions/104845/permission-to-make-symbolic-links-in-windows-7 However, I didn't have much luck doing this.
+
+Since I develop on Mac OS X, I use VMWare Fusion for Windows testing. I create a shared folder that I map to a drive on Windows. I open the Node.js command prompt and run as Administrator. I then map the network drive running the following command:
+
+net use z: "\\vmware-host\Shared Folders"
+I can then navigate to my fs-extra directory and run the tests.
+
+Naming
+I put a lot of thought into the naming of these functions. Inspired by @coolaj86's request. So he deserves much of the credit for raising the issue. See discussion(s) here:
+
+https://github.com/jprichardson/node-fs-extra/issues/2
+https://github.com/flatiron/utile/issues/11
+https://github.com/ryanmcgrath/wrench-js/issues/29
+https://github.com/substack/node-mkdirp/issues/17
+First, I believe that in as many cases as possible, the Node.js naming schemes should be chosen. However, there are problems with the Node.js own naming schemes.
+
+For example, fs.readFile() and fs.readdir(): the F is capitalized in File and the d is not capitalized in dir. Perhaps a bit pedantic, but they should still be consistent. Also, Node.js has chosen a lot of POSIX naming schemes, which I believe is great. See: fs.mkdir(), fs.rmdir(), fs.chown(), etc.
+
+We have a dilemma though. How do you consistently name methods that perform the following POSIX commands: cp, cp -r, mkdir -p, and rm -rf?
+
+My perspective: when in doubt, err on the side of simplicity. A directory is just a hierarchical grouping of directories and files. Consider that for a moment. So when you want to copy it or remove it, in most cases you'll want to copy or remove all of its contents. When you want to create a directory, if the directory that it's suppose to be contained in does not exist, then in most cases you'll want to create that too.
+
+So, if you want to remove a file or a directory regardless of whether it has contents, just call fs.remove(path). If you want to copy a file or a directory whether it has contents, just call fs.copy(source, destination). If you want to create a directory regardless of whether its parent directories exist, just call fs.mkdirs(path) or fs.mkdirp(path).
+
+Credit
+fs-extra wouldn't be possible without using the modules from the following authors:
+
+Isaac Shlueter
+Charlie McConnel
+James Halliday
+Andrew Kelley
+License
+Licensed under MIT
+
+Copyright (c) 2011-2024 JP Richardson.
+
+
+
+Pkg-dir.
+
+package-directory
+Find the root directory of a Node.js project or npm package
+
+Install
+npm install package-directory
+Usage
+/
+└── Users
+    └── sindresorhus
+        └── foo
+            ├── package.json
+            └── bar
+                ├── baz
+                └── example.js
+// example.js
+import {packageDirectory} from 'package-directory';
+
+console.log(await packageDirectory());
+//=> '/Users/sindresorhus/foo'
+API
+packageDirectory(option?)
+Returns a Promise for either the project root path or undefined if it could not be found.
+
+packageDirectorySync(options?)
+Returns the project root path or undefined if it could not be found.
+
+options
+Type: object
+
+cwd
+Type: string
+Default: process.cwd()
+
+The directory to start searching from.
+
+Related
+package-directory-cli - CLI for this package
+package-up - Find the closest package.json file
+find-up - Find a file by walking up parent directories.
+
+
+
+
+Filehound.
+
+Filehound
+NPM downloads npm Build Status Coverage Status license github-issues stars forks
+
+Flexible and fluent interface for searching the file system
+
+nodei.co
+
+Installation
+npm install --save filehound
+Demo
+
+Usage
+The example below prints all of the files in a directory that have the .json file extension:
+
+const FileHound = require('filehound');
+
+const files = FileHound.create()
+  .paths('/some/dir')
+  .ext('json')
+  .find();
+
+files.then(console.log);
+Documentation
+For more examples and API details, see API documentation
+
+Test
+npm test
+To generate a test coverage report:
+
+npm run coverage
+Contributing
+If you're unsure if a feature would make a good addition, you can always create an issue first.
+We aim for high test coverage. Please write tests for any new functionality or changes.
+Any API changes should be fully documented.
+Make sure your code meets our linting standards. Run npm run lint to check your code.
+Maintain the existing coding style. There are some settings in .jsbeautifyrc to help.
+Be mindful of others when making suggestions and/or code reviewing.
+
+
+
+Move-file.
+
+move-file
+Move a file
+
+The built-in fs.rename() is just a JavaScript wrapper for the C rename(2) function, which doesn't support moving files across partitions or devices. This module is what you would have expected fs.rename() to be.
+
+Highlights
+Promise API.
+Supports moving a file across partitions and devices.
+Optionally prevent overwriting an existing file.
+Creates non-existent destination directories for you.
+Install
+npm install move-file
+Usage
+import {moveFile} from 'move-file';
+
+await moveFile('source/unicorn.png', 'destination/unicorn.png');
+console.log('The file has been moved');
+API
+moveFile(sourcePath, destinationPath, options?)
+Returns a Promise that resolves when the file has been moved.
+
+moveFileSync(sourcePath, destinationPath, options?)
+sourcePath
+Type: string
+
+The file you want to move.
+
+destinationPath
+Type: string
+
+Where you want the file moved.
+
+options
+Type: object
+
+See Options.
+
+renameFile(source, destination, options?)
+Returns a Promise that resolves when the file has been renamed. source and destination must be in the same directory.
+
+renameFileSync(source, destination, options?)
+source
+Type: string
+
+The file you want to rename.
+
+destination
+Type: string
+
+What you want to rename the file to.
+
+options
+Type: object
+
+See Options.
+
+Options
+overwrite
+Type: boolean
+Default: true
+
+Overwrite existing destination file.
+
+cwd
+Type: string
+Default: process.cwd()
+
+The working directory to find source files.
+
+The source and destination path are relative to this.
+
+directoryMode
+Type: number
+Default: 0o777
+
+Permissions for created directories.
+
+It has no effect on Windows.
+
+Related
+move-file-cli - CLI for this module
+copy-file - Copy a file
+cpy - Copy files
+make-dir - Make a directory and its parents if needed.
+
+
+
+TEMPY.
+
+tempy
+Get a random temporary file or directory path
+
+Install
+npm install tempy
+Usage
+import {temporaryFile, temporaryDirectory} from 'tempy';
+
+temporaryFile();
+//=> '/private/var/folders/3x/jf5977fn79jbglr7rk0tq4d00000gn/T/4f504b9edb5ba0e89451617bf9f971dd'
+
+temporaryFile({extension: 'png'});
+//=> '/private/var/folders/3x/jf5977fn79jbglr7rk0tq4d00000gn/T/a9fb0decd08179eb6cf4691568aa2018.png'
+
+temporaryFile({name: 'unicorn.png'});
+//=> '/private/var/folders/3x/jf5977fn79jbglr7rk0tq4d00000gn/T/f7f62bfd4e2a05f1589947647ed3f9ec/unicorn.png'
+
+temporaryDirectory();
+//=> '/private/var/folders/3x/jf5977fn79jbglr7rk0tq4d00000gn/T/2f3d094aec2cb1b93bb0f4cffce5ebd6'
+
+temporaryDirectory({prefix: 'name'});
+//=> '/private/var/folders/3x/jf5977fn79jbglr7rk0tq4d00000gn/T/name_3c085674ad31223b9653c88f725d6b41'
+API
+temporaryFile(options?)
+Get a temporary file path you can write to.
+
+temporaryFileTask(callback, options?)
+The callback resolves with a temporary file path you can write to. The file is automatically cleaned up after the callback is executed. Returns a promise that resolves with the return value of the callback after it is executed and the file is cleaned up.
+
+callback
+Type: (tempPath: string) => void
+
+A callback that is executed with the temp file path. Can be asynchronous.
+
+options
+Type: object
+
+You usually won't need either the extension or name option. Specify them only when actually needed.
+
+extension
+Type: string
+
+File extension.
+
+name
+Type: string
+
+Filename. Mutually exclusive with the extension option.
+
+temporaryDirectory(options?)
+Get a temporary directory path. The directory is created for you.
+
+temporaryDirectoryTask(callback, options?)
+The callback resolves with a temporary directory path you can write to. The directory is automatically cleaned up after the callback is executed. Returns a promise that resolves with the return value of the callback after it is executed and the directory is cleaned up.
+
+callback
+Type: (tempPath: string) => void
+
+A callback that is executed with the temp directory path. Can be asynchronous.
+
+options
+Type: Object
+
+prefix
+Type: string
+
+Directory prefix.
+
+Useful for testing by making it easier to identify cache directories that are created.
+
+You usually won't need this option. Specify it only when actually needed.
+
+temporaryWrite(fileContent, options?)
+Write data to a random temp file.
+
+temporaryWriteTask(fileContent, callback, options?)
+Write data to a random temp file. The file is automatically cleaned up after the callback is executed. Returns a promise that resolves with the return value of the callback after it is executed and the file is cleaned up.
+
+fileContent
+Type: string | Buffer | TypedArray | DataView | stream.Readable
+
+Data to write to the temp file.
+
+callback
+Type: (tempPath: string) => void
+
+A callback that is executed with the temp file path. Can be asynchronous.
+
+options
+See options.
+
+temporaryWriteSync(fileContent, options?)
+Synchronously write data to a random temp file.
+
+fileContent
+Type: string | Buffer | TypedArray | DataView
+
+Data to write to the temp file.
+
+options
+See options.
+
+rootTemporaryDirectory
+Get the root temporary directory path. For example: /private/var/folders/3x/jf5977fn79jbglr7rk0tq4d00000gn/T
+
+
+
